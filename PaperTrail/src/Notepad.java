@@ -25,6 +25,7 @@ import javax.swing.*;
 
 public class Notepad extends JFrame
 {
+    private static int openWindowsCount = 0;
     JTabbedPane tabbedPane;
     JFileChooser fileChooser;
     String currentFindText = "";
@@ -40,9 +41,18 @@ public class Notepad extends JFrame
 
     Notepad()
     {
+        openWindowsCount++;
         setTitle("PaperTrail");
         setSize(800,600);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new java.awt.event.WindowAdapter() 
+        {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) 
+            {
+                closeWindow(); // Handle window closing event
+            }
+        });
         //ImageIcon icon = new ImageIcon(getClass().getResource("notepad.jpg"));
         //setIconImage(icon.getImage());
 
@@ -58,6 +68,20 @@ public class Notepad extends JFrame
         addNewTab();
         updateCurrentTextArea();
         loadPreferences();      
+    }
+
+    private void closeWindow() 
+    {
+        openWindowsCount--; 
+        if (openWindowsCount <= 0) 
+        { 
+            dispose();
+            System.exit(0);
+        } 
+        else 
+        {
+            dispose();
+        }
     }
 
     private void createMenuBar()
@@ -191,11 +215,14 @@ public class Notepad extends JFrame
         zoomIn.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, KeyEvent.CTRL_DOWN_MASK));
         zoomOut.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, KeyEvent.CTRL_DOWN_MASK));
         restoreZoom.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_0, KeyEvent.CTRL_DOWN_MASK));
+        selectAll.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, KeyEvent.CTRL_DOWN_MASK));
+        delete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
     }
 
     private void createStatusBar()
     {
         statusLabel = new JLabel("Line: 1, Column: 1");
+        statusLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
         add(statusLabel, BorderLayout.SOUTH);
     }
 
@@ -293,7 +320,40 @@ public class Notepad extends JFrame
                 tabbedPane.setTabComponentAt(tabbedPane.getTabCount() - 1, new TabComponent(tabbedPane));
                 tabbedPane.setSelectedComponent(scrollPane);
 
+                TabComponent tabComponent = (TabComponent) tabbedPane.getTabComponentAt(tabbedPane.getTabCount() - 1);
+                tabComponent.setPreferredSize(new Dimension(150, 30));
+
                 currentFilePath = file.getAbsolutePath();
+
+                textArea.getDocument().addDocumentListener(new DocumentListener() 
+                {
+                    @Override
+                    public void insertUpdate(DocumentEvent e) 
+                    {
+                        markAsModified();
+                    }
+    
+                    @Override
+                    public void removeUpdate(DocumentEvent e) 
+                    {
+                        markAsModified();
+                    }
+    
+                    @Override
+                    public void changedUpdate(DocumentEvent e) 
+                    {
+                        markAsModified();
+                    }
+    
+                    private void markAsModified() 
+                    {
+                        String title = tabbedPane.getTitleAt(tabbedPane.getSelectedIndex());
+                        if (!title.endsWith("*")) 
+                        {
+                            tabbedPane.setTitleAt(tabbedPane.getSelectedIndex(), title + "*");
+                        }
+                    }
+                });
             }
             catch (IOException e)
             {
@@ -412,13 +472,13 @@ public class Notepad extends JFrame
     private void setLightTheme()
     {
         preferences.put("theme", "light");
-        setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+        setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
     }
 
     private void setDarkTheme()
     {
         preferences.put("theme", "dark");
-        setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
     }
 
     private void setLookAndFeel(String lookAndFeel)
@@ -609,38 +669,41 @@ public class Notepad extends JFrame
             setLightTheme();
         }
 
-        String fontName = preferences.get("fontName", "Arial");
+        String fontName = preferences.get("fontName", "Consolas");
         int fontSize = preferences.getInt("fontSize", 11);
         int fontStyle = preferences.getInt("fontStyle", Font.PLAIN);
         Font font = new Font(fontName, fontStyle, fontSize);
         currentTextArea.setFont(font);
     }
 
-    class TabComponent extends JPanel
+    class TabComponent extends JPanel 
     {
         private final JTabbedPane pane;
         private final JButton closeButton;
-
-        public TabComponent(final JTabbedPane pane)
+        private final JLabel label;
+    
+        public TabComponent(final JTabbedPane pane) 
         {
             this.pane = pane;
             setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
             setOpaque(false);
-
-            JLabel label = new JLabel()
+    
+            label = new JLabel() 
             {
-                public String getText()
+                public String getText() 
                 {
                     int i = pane.indexOfTabComponent(TabComponent.this);
-                    if (i != -1)
+                    if (i != -1) 
                     {
                         return pane.getTitleAt(i);
                     }
                     return null;
                 }
             };
+    
+            label.setPreferredSize(new Dimension(110, label.getPreferredSize().height));
             add(label);
-
+    
             add(Box.createHorizontalGlue());
             closeButton = new JButton("x");
             closeButton.setOpaque(false);
@@ -649,11 +712,11 @@ public class Notepad extends JFrame
             closeButton.addActionListener(e -> closeTab());
             add(closeButton, BorderLayout.EAST);
         }
-
-        private void closeTab()
+    
+        private void closeTab() 
         {
             int i = pane.indexOfTabComponent(TabComponent.this);
-            if (i != -1)
+            if (i != -1) 
             {
                 pane.remove(i);
             }

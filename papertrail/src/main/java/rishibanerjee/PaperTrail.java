@@ -1,8 +1,12 @@
+package rishibanerjee;
+
+import com.formdev.flatlaf.intellijthemes.FlatArcDarkOrangeIJTheme;
+import com.formdev.flatlaf.intellijthemes.FlatArcOrangeIJTheme;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
-import javax.swing.ImageIcon;
+//import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
@@ -38,6 +42,7 @@ import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.awt.event.KeyEvent;
+import java.awt.print.PrinterException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -46,10 +51,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import javax.swing.UnsupportedLookAndFeelException;
 
 
-public class Notepad extends JFrame
+public class PaperTrail extends JFrame
 {
     private static int openWindowsCount = 0;
     JTabbedPane tabbedPane;
@@ -66,7 +74,7 @@ public class Notepad extends JFrame
     private String currentFilePath;
     JPanel settingsPanel;
 
-    Notepad()
+    PaperTrail() throws UnsupportedLookAndFeelException
     {
         openWindowsCount++;
         setTitle("PaperTrail");
@@ -77,7 +85,7 @@ public class Notepad extends JFrame
             @Override
             public void windowClosing(java.awt.event.WindowEvent windowEvent) 
             {
-                closeWindow(); // Handle window closing event
+                closeWindow(); 
             }
         });
         //ImageIcon icon = new ImageIcon(getClass().getResource("notepad.jpg"));
@@ -94,7 +102,7 @@ public class Notepad extends JFrame
         // Adding first tab by default
         addNewTab();
         updateCurrentTextArea();
-        loadPreferences();      
+        loadPreferences(); 
     }
 
     private void closeWindow() 
@@ -194,7 +202,13 @@ public class Notepad extends JFrame
 
         // Action listeners
         newFile.addActionListener(e -> addNewTab());
-        newWindow.addActionListener(e -> new Notepad().setVisible(true));
+        newWindow.addActionListener(e -> {
+            try {
+                new PaperTrail().setVisible(true);
+            } catch (UnsupportedLookAndFeelException ex) {
+                Logger.getLogger(PaperTrail.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        });
         openFile.addActionListener(e -> openFile());
         saveFile.addActionListener(e -> saveFile(false));
         saveAsFile.addActionListener(e -> saveFile(true));
@@ -320,7 +334,6 @@ public class Notepad extends JFrame
         }
         catch (BadLocationException e)
         {
-            e.printStackTrace();
         }
         statusLabel.setText("Line: " + (lineNum + 1) + ", Column: " + (colNum + 1));
     }
@@ -425,7 +438,7 @@ public class Notepad extends JFrame
         {
             getCurrentTextArea().print();
         }
-        catch (Exception e)
+        catch (PrinterException e)
         {
             JOptionPane.showMessageDialog(this, "Error printing file: " + e.getMessage());
         }
@@ -439,6 +452,7 @@ public class Notepad extends JFrame
 
     private void findNextText()
     {
+        currentFindText = JOptionPane.showInputDialog(this, "Find Next:");
         JTextArea textArea = getCurrentTextArea();
         int startIndex = textArea.getCaretPosition();
         findInDocument(startIndex);
@@ -446,6 +460,7 @@ public class Notepad extends JFrame
 
     private void findPreviousText()
     {
+        currentFindText = JOptionPane.showInputDialog(this, "Find Previous:");
         JTextArea textArea = getCurrentTextArea();
         int startIndex = textArea.getCaretPosition() - 1;
         String content = textArea.getText();
@@ -496,30 +511,30 @@ public class Notepad extends JFrame
         textArea.insert(dateString, textArea.getCaretPosition());
     }
 
-    private void setLightTheme()
+    private void setLightTheme() throws UnsupportedLookAndFeelException
     {
         preferences.put("theme", "light");
-        setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+        FlatArcOrangeIJTheme.setup();
+        SwingUtilities.updateComponentTreeUI(this);
+        UIManager.put( "Button.arc", 10 );
+        UIManager.put( "Component.arc", 10 );
+        UIManager.put( "ProgressBar.arc", 10 );
+        UIManager.put( "TextComponent.arc", 10 );
+        UIManager.put( "TabbedPane.showTabSeparators", true );
     }
 
     private void setDarkTheme()
     {
         preferences.put("theme", "dark");
-        setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        FlatArcDarkOrangeIJTheme.setup();
+        SwingUtilities.updateComponentTreeUI(this);
+        UIManager.put( "Button.arc", 10 );
+        UIManager.put( "Component.arc", 10 );
+        UIManager.put( "ProgressBar.arc", 10 );
+        UIManager.put( "TextComponent.arc", 10 );
+        UIManager.put( "TabbedPane.showTabSeparators", true );
     }
 
-    private void setLookAndFeel(String lookAndFeel)
-    {
-        try
-        {
-            UIManager.setLookAndFeel(lookAndFeel);
-            SwingUtilities.updateComponentTreeUI(this);
-        }
-        catch (Exception e)
-        {
-            JOptionPane.showMessageDialog(this, "Error setting theme: " + e.getMessage());
-        }
-    }
 
     private void toggleWordWrap()
     {
@@ -550,7 +565,7 @@ public class Notepad extends JFrame
         int settingsTabIndex = findSettingsTabIndex();
         if (settingsTabIndex == -1) 
         {
-            JPanel settingsPanel = createSettingsPanel();
+            settingsPanel = createSettingsPanel();
             tabbedPane.addTab("Settings", settingsPanel);
             int index = tabbedPane.indexOfComponent(settingsPanel);
             tabbedPane.setTabComponentAt(index, new TabComponent(tabbedPane));
@@ -655,7 +670,11 @@ public class Notepad extends JFrame
             } 
             else 
             {
-                setLightTheme();
+                try {
+                    setLightTheme();
+                } catch (UnsupportedLookAndFeelException ex) {
+                    Logger.getLogger(PaperTrail.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         });
 
@@ -719,7 +738,6 @@ public class Notepad extends JFrame
         }
         catch (CannotUndoException e)
         {
-            e.printStackTrace();
         }
     }
 
@@ -734,7 +752,6 @@ public class Notepad extends JFrame
         }
         catch (CannotRedoException e)
         {
-            e.printStackTrace();
         }
     }
 
@@ -747,7 +764,7 @@ public class Notepad extends JFrame
         }
     }
 
-    private void loadPreferences()
+    private void loadPreferences() throws UnsupportedLookAndFeelException
     {
         String theme = preferences.get("theme", "light");
         if (theme.equals("dark"))
@@ -780,6 +797,7 @@ public class Notepad extends JFrame
     
             label = new JLabel() 
             {
+                @Override
                 public String getText() 
                 {
                     int i = pane.indexOfTabComponent(TabComponent.this);
@@ -813,3 +831,4 @@ public class Notepad extends JFrame
         }
     }
 }
+

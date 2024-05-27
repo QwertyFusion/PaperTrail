@@ -1,4 +1,5 @@
 import javax.swing.ImageIcon;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
@@ -7,9 +8,13 @@ import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoManager;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
+import java.awt.GridLayout;
+import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -19,6 +24,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.Flow;
 import java.util.prefs.Preferences;
 
 import javax.swing.*;
@@ -38,6 +44,7 @@ public class Notepad extends JFrame
     private JMenuItem zoomIn, zoomOut, restoreZoom;
     private JCheckBoxMenuItem statusBarToggle;
     private String currentFilePath;
+    JPanel settingsPanel;
 
     Notepad()
     {
@@ -478,7 +485,7 @@ public class Notepad extends JFrame
     private void setDarkTheme()
     {
         preferences.put("theme", "dark");
-        setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+        setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
     }
 
     private void setLookAndFeel(String lookAndFeel)
@@ -505,79 +512,141 @@ public class Notepad extends JFrame
             textArea.setWrapStyleWord(wordWrap);
         }
     }
-
-    private void openSettingsPage() {
-        JDialog settingsDialog = new JDialog(this, "Font Settings", true);
-        settingsDialog.setSize(400, 400);
-        settingsDialog.setLayout(new BorderLayout());
     
+    private int findSettingsTabIndex() 
+    {
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) 
+        {
+            if (tabbedPane.getComponentAt(i) == settingsPanel) 
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
+    private void openSettingsPage() 
+    {
+        int settingsTabIndex = findSettingsTabIndex();
+        if (settingsTabIndex == -1) 
+        {
+            JPanel settingsPanel = createSettingsPanel();
+            tabbedPane.addTab("Settings", settingsPanel);
+            int index = tabbedPane.indexOfComponent(settingsPanel);
+            tabbedPane.setTabComponentAt(index, new TabComponent(tabbedPane));
+            tabbedPane.setSelectedIndex(index);
+            tabbedPane.getTabComponentAt(index).setPreferredSize(new Dimension(150, 30));
+        } 
+        else 
+        {
+            // If settings page already exists, select that tab
+            tabbedPane.setSelectedIndex(settingsTabIndex);
+        }
+    }
+    
+    private JPanel createSettingsPanel() 
+    {
+        settingsPanel = new JPanel();
+        JPanel settingsInnerPanel = new JPanel();
+        settingsInnerPanel.setLayout(new GridLayout(3,1));
+        
         JPanel fontPanel = new JPanel();
-        fontPanel.setLayout(new BoxLayout(fontPanel, BoxLayout.Y_AXIS));
-    
+        fontPanel.setBorder(new TitledBorder(null, "Font", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+        fontPanel.setLayout(new GridLayout(2,1));
+        JPanel fontTopPanel = new JPanel();
+        fontTopPanel.setLayout(new GridLayout(3,2));
         String[] fonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
         JComboBox<String> fontComboBox = new JComboBox<>(fonts);
         fontComboBox.setSelectedItem(currentTextArea.getFont().getFamily());
-        fontPanel.add(new JLabel("Font:"));
-        fontPanel.add(fontComboBox);
-    
+        fontTopPanel.add(new JLabel("Font:"));
+        fontTopPanel.add(fontComboBox);
+
         SpinnerModel fontSizeModel = new SpinnerNumberModel(currentTextArea.getFont().getSize(), 8, 72, 1);
         JSpinner fontSizeSpinner = new JSpinner(fontSizeModel);
-        fontPanel.add(new JLabel("Size:"));
-        fontPanel.add(fontSizeSpinner);
-    
+        JComponent editor = fontSizeSpinner.getEditor();
+        JSpinner.DefaultEditor spinnerEditor = (JSpinner.DefaultEditor) editor;
+        spinnerEditor.getTextField().setColumns(2); 
+        fontTopPanel.add(new JLabel("Size:"));
+        fontTopPanel.add(fontSizeSpinner);
+
         JCheckBox boldCheckBox = new JCheckBox("Bold");
         JCheckBox italicCheckBox = new JCheckBox("Italic");
-        fontPanel.add(boldCheckBox);
-        fontPanel.add(italicCheckBox);
-    
+        fontTopPanel.add(boldCheckBox);
+        fontTopPanel.add(italicCheckBox);
+
+        
+        JPanel fontDownPanel = new JPanel();
+        fontDownPanel.setLayout(new BorderLayout());
         JTextArea fontSample = new JTextArea("Sample Text");
         fontSample.setFont(currentTextArea.getFont());
-        fontPanel.add(new JLabel("Sample:"));
-        fontPanel.add(new JScrollPane(fontSample));
-    
+        fontDownPanel.add(new JLabel("Sample:"), BorderLayout.NORTH);
+        fontDownPanel.add(new JScrollPane(fontSample), BorderLayout.CENTER);
+
         JPanel themePanel = new JPanel();
+        themePanel.setBorder(new TitledBorder(null, "Theme", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+        themePanel.setLayout(new GridLayout(1,2));
         ButtonGroup themeGroup = new ButtonGroup();
         JRadioButton lightThemeButton = new JRadioButton("Light Theme");
         JRadioButton darkThemeButton = new JRadioButton("Dark Theme");
         themeGroup.add(lightThemeButton);
         themeGroup.add(darkThemeButton);
-    
+
         String theme = preferences.get("theme", "light");
-        if (theme.equals("dark")) {
+        if (theme.equals("dark")) 
+        {
             darkThemeButton.setSelected(true);
-        } else {
+        } 
+        else 
+        {
             lightThemeButton.setSelected(true);
         }
-    
         themePanel.add(lightThemeButton);
         themePanel.add(darkThemeButton);
-    
+
+        JPanel bottomPanel = new JPanel();
         JButton applyButton = new JButton("Apply");
+        JButton closeButton = new JButton("Close");
+        Dimension buttonSize = new Dimension(70, closeButton.getPreferredSize().height);
+        applyButton.setPreferredSize(buttonSize);
+        closeButton.setPreferredSize(buttonSize);
+        bottomPanel.add(applyButton);
+        bottomPanel.add(closeButton);
+
         applyButton.addActionListener(e -> {
             String selectedFont = (String) fontComboBox.getSelectedItem();
             int fontSize = (Integer) fontSizeSpinner.getValue();
             int fontStyle = Font.PLAIN;
-            if (boldCheckBox.isSelected()) fontStyle |= Font.BOLD;
-            if (italicCheckBox.isSelected()) fontStyle |= Font.ITALIC;
+            if (boldCheckBox.isSelected())
+            { 
+                fontStyle |= Font.BOLD;
+            }
+            if (italicCheckBox.isSelected()) 
+            {
+                fontStyle |= Font.ITALIC;
+            }
             Font newFont = new Font(selectedFont, fontStyle, fontSize);
             currentTextArea.setFont(newFont);
             fontSample.setFont(newFont);
-    
-            if (darkThemeButton.isSelected()) {
+
+            if (darkThemeButton.isSelected()) 
+            {
                 setDarkTheme();
-            } else {
+            } 
+            else 
+            {
                 setLightTheme();
             }
-    
-            settingsDialog.dispose();
         });
-    
-        settingsDialog.add(fontPanel, BorderLayout.NORTH);
-        settingsDialog.add(themePanel, BorderLayout.CENTER);
-        settingsDialog.add(applyButton, BorderLayout.PAGE_END);
-    
-        settingsDialog.setVisible(true);
-    }
+
+        fontPanel.add(fontTopPanel);
+        fontPanel.add(fontDownPanel);
+        settingsInnerPanel.add(fontPanel);
+        settingsInnerPanel.add(themePanel);
+        settingsInnerPanel.add(bottomPanel);
+        settingsPanel.add(settingsInnerPanel);
+
+        return settingsPanel;
+    }    
 
     private void zoomIn()
     {

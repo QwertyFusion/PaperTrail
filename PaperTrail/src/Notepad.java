@@ -1,4 +1,30 @@
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -6,15 +32,11 @@ import javax.swing.text.BadLocationException;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoManager;
-
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
-import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -24,10 +46,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.concurrent.Flow;
 import java.util.prefs.Preferences;
 
-import javax.swing.*;
 
 public class Notepad extends JFrame
 {
@@ -561,7 +581,7 @@ public class Notepad extends JFrame
         fontTopPanel.add(new JLabel("Font:"));
         fontTopPanel.add(fontComboBox);
 
-        SpinnerModel fontSizeModel = new SpinnerNumberModel(currentTextArea.getFont().getSize(), 8, 72, 1);
+        SpinnerNumberModel fontSizeModel = new SpinnerNumberModel(currentTextArea.getFont().getSize(), 8, 72, 1);
         JSpinner fontSizeSpinner = new JSpinner(fontSizeModel);
         JComponent editor = fontSizeSpinner.getEditor();
         JSpinner.DefaultEditor spinnerEditor = (JSpinner.DefaultEditor) editor;
@@ -585,6 +605,7 @@ public class Notepad extends JFrame
         JPanel themePanel = new JPanel();
         themePanel.setBorder(new TitledBorder(null, "Theme", TitledBorder.LEADING, TitledBorder.TOP, null, null));
         themePanel.setLayout(new GridLayout(1,2));
+        
         ButtonGroup themeGroup = new ButtonGroup();
         JRadioButton lightThemeButton = new JRadioButton("Light Theme");
         JRadioButton darkThemeButton = new JRadioButton("Dark Theme");

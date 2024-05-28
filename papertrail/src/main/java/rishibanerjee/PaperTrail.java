@@ -105,7 +105,7 @@ public class PaperTrail extends JFrame
         // Adding first tab by default
         addNewTab();
         updateCurrentTextArea();
-        loadPreferences();
+        loadPreferences();        
     }
 
     private void closeWindow() 
@@ -216,9 +216,12 @@ public class PaperTrail extends JFrame
         // Action listeners
         newFile.addActionListener(e -> addNewTab());
         newWindow.addActionListener(e -> {
-            try {
+            try 
+            {
                 new PaperTrail().setVisible(true);
-            } catch (UnsupportedLookAndFeelException ex) {
+            } 
+            catch (UnsupportedLookAndFeelException ex) 
+            {
                 Logger.getLogger(PaperTrail.class.getName()).log(Level.SEVERE, null, ex);
             }
         });
@@ -423,43 +426,51 @@ public class PaperTrail extends JFrame
 
     private void saveFile(boolean saveAs) 
     {
-        JTextArea textArea = getCurrentTextArea();
-        String title = tabbedPane.getTitleAt(tabbedPane.getSelectedIndex());
-        File file = saveAs || title.startsWith("Untitled*") ? null : new File(title.replace("*", ""));
-    
-        if (file == null || saveAs) 
+        if (!tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()).equals("Settings") &&
+        !tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()).equals("About")) 
         {
-            int result = fileChooser.showSaveDialog(this);
-            if (result == JFileChooser.APPROVE_OPTION) 
+            JTextArea textArea = getCurrentTextArea();
+            String title = tabbedPane.getTitleAt(tabbedPane.getSelectedIndex());
+            File file = saveAs || title.startsWith("Untitled*") ? null : new File(title.replace("*", ""));
+        
+            if (file == null || saveAs) 
             {
-                file = fileChooser.getSelectedFile();
-                currentFilePath = file.getAbsolutePath();
-            } 
-            else 
-            {
-                return;
+                int result = fileChooser.showSaveDialog(this);
+                if (result == JFileChooser.APPROVE_OPTION) 
+                {
+                    file = fileChooser.getSelectedFile();
+                    currentFilePath = file.getAbsolutePath();
+                } 
+                else 
+                {
+                    return;
+                }
             }
-        }
-    
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(currentFilePath))) 
-        {
-            textArea.write(writer);
-            tabbedPane.setTitleAt(tabbedPane.getSelectedIndex(), file.getName());
-        } catch (IOException e) 
-        {
-            JOptionPane.showMessageDialog(this, "Error saving file: " + e.getMessage());
-        }
+        
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(currentFilePath))) 
+            {
+                textArea.write(writer);
+                tabbedPane.setTitleAt(tabbedPane.getSelectedIndex(), file.getName());
+            } catch (IOException e) 
+            {
+                JOptionPane.showMessageDialog(this, "Error saving file: " + e.getMessage());
+            }
+        } 
     }
 
     private void printFile()
     {
-        try
+        if (!tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()).equals("Settings") &&
+            !tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()).equals("About")) 
         {
-            getCurrentTextArea().print();
-        }
-        catch (PrinterException e)
-        {
-            JOptionPane.showMessageDialog(this, "Error printing file: " + e.getMessage());
+            try 
+            {
+                getCurrentTextArea().print();
+            } 
+            catch (PrinterException e) 
+            {
+                JOptionPane.showMessageDialog(this, "Error printing file: " + e.getMessage());
+            }
         }
     }
 
@@ -540,6 +551,7 @@ public class PaperTrail extends JFrame
         UIManager.put( "ProgressBar.arc", 10 );
         UIManager.put( "TextComponent.arc", 10 );
         UIManager.put( "TabbedPane.showTabSeparators", true );
+        SwingUtilities.updateComponentTreeUI(fileChooser);
     }
 
     private void setDarkTheme()
@@ -552,6 +564,7 @@ public class PaperTrail extends JFrame
         UIManager.put( "ProgressBar.arc", 10 );
         UIManager.put( "TextComponent.arc", 10 );
         UIManager.put( "TabbedPane.showTabSeparators", true );
+        SwingUtilities.updateComponentTreeUI(fileChooser);
     }
 
 

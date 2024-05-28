@@ -6,7 +6,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
-//import javax.swing.ImageIcon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
@@ -25,6 +25,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
@@ -41,6 +42,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.event.KeyEvent;
 import java.awt.print.PrinterException;
 import java.io.BufferedReader;
@@ -51,6 +53,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -76,6 +80,7 @@ public class PaperTrail extends JFrame
     JPanel aboutPanel;
     private int defaultTextSize = 16;
     private String defaultFontName = "Consolas";
+    private Map<JTextArea, UndoManager> undoManagers = new HashMap<>();
 
     PaperTrail() throws UnsupportedLookAndFeelException
     {
@@ -91,8 +96,8 @@ public class PaperTrail extends JFrame
                 closeWindow(); 
             }
         });
-        //ImageIcon icon = new ImageIcon(getClass().getResource("notepad.jpg"));
-        //setIconImage(icon.getImage());
+        ImageIcon icon = new ImageIcon(getClass().getResource("images/logo.png"));
+        setIconImage(icon.getImage());
 
         tabbedPane = new JTabbedPane();
         fileChooser = new JFileChooser();
@@ -146,6 +151,7 @@ public class PaperTrail extends JFrame
         fileMenu.addSeparator();
         fileMenu.add(closeTab);
         fileMenu.add(closeWindow);
+        
 
         // Edit menu
         JMenu editMenu = new JMenu("Edit");
@@ -157,7 +163,7 @@ public class PaperTrail extends JFrame
         JMenuItem find = new JMenuItem("Find");
         JMenuItem findNext = new JMenuItem("Find Next");
         JMenuItem findPrevious = new JMenuItem("Find Previous");
-        JMenuItem replace = new JMenuItem("Replace");
+        JMenuItem replaceAll = new JMenuItem("Replace All");
         JMenuItem insertDate = new JMenuItem("Insert Date/Time");
         JMenuItem selectAll = new JMenuItem("Select All");
         JMenuItem delete = new JMenuItem("Delete");
@@ -174,7 +180,7 @@ public class PaperTrail extends JFrame
         editMenu.add(find);
         editMenu.add(findNext);
         editMenu.add(findPrevious);
-        editMenu.add(replace);
+        editMenu.add(replaceAll);
         editMenu.addSeparator();
         editMenu.add(selectAll);
         editMenu.add(insertDate);
@@ -239,7 +245,7 @@ public class PaperTrail extends JFrame
         find.addActionListener(e -> findText());
         findNext.addActionListener(e -> findNextText());
         findPrevious.addActionListener(e -> findPreviousText());
-        replace.addActionListener(e -> replaceText());
+        replaceAll.addActionListener(e -> replaceText());
         insertDate.addActionListener(e -> insertDateTime());
         selectAll.addActionListener(e -> getCurrentTextArea().selectAll());
         delete.addActionListener(e -> getCurrentTextArea().replaceSelection(""));
@@ -268,7 +274,7 @@ public class PaperTrail extends JFrame
         find.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK));
         findNext.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0));
         findPrevious.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F3, KeyEvent.SHIFT_DOWN_MASK));
-        replace.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK));
+        replaceAll.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK));
         insertDate.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
         zoomIn.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, KeyEvent.CTRL_DOWN_MASK));
         zoomOut.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, KeyEvent.CTRL_DOWN_MASK));
@@ -306,6 +312,7 @@ public class PaperTrail extends JFrame
         textArea.setFont(new Font(defaultFontName, Font.PLAIN, defaultTextSize));
         undoManager = new UndoManager();
         textArea.getDocument().addUndoableEditListener(undoManager);
+        undoManagers.put(textArea, undoManager);
         textArea.getDocument().addDocumentListener(new DocumentListener()
         {
             @Override
@@ -451,7 +458,8 @@ public class PaperTrail extends JFrame
             {
                 textArea.write(writer);
                 tabbedPane.setTitleAt(tabbedPane.getSelectedIndex(), file.getName());
-            } catch (IOException e) 
+            } 
+            catch (IOException e) 
             {
                 JOptionPane.showMessageDialog(this, "Error saving file: " + e.getMessage());
             }
@@ -476,33 +484,45 @@ public class PaperTrail extends JFrame
 
     private void findText()
     {
-        currentFindText = JOptionPane.showInputDialog(this, "Find:");
-        findInDocument(0);
+        String input = JOptionPane.showInputDialog(this, "Find:");
+        if (input != null)
+        {
+            currentFindText = input;
+            findInDocument(0);
+        }
     }
 
     private void findNextText()
     {
-        currentFindText = JOptionPane.showInputDialog(this, "Find Next:");
-        JTextArea textArea = getCurrentTextArea();
-        int startIndex = textArea.getCaretPosition();
-        findInDocument(startIndex);
+        String input = JOptionPane.showInputDialog(this, "Find Next:");
+        if (input != null)
+        {
+            currentFindText = input;
+            JTextArea textArea = getCurrentTextArea();
+            int startIndex = textArea.getCaretPosition();
+            findInDocument(startIndex);
+        }
     }
 
     private void findPreviousText()
     {
-        currentFindText = JOptionPane.showInputDialog(this, "Find Previous:");
-        JTextArea textArea = getCurrentTextArea();
-        int startIndex = textArea.getCaretPosition() - 1;
-        String content = textArea.getText();
-        int index = content.lastIndexOf(currentFindText, startIndex);
-        if (index == -1)
+        String input = JOptionPane.showInputDialog(this, "Find Previous:");
+        if (input != null)
         {
-            JOptionPane.showMessageDialog(this, "Text not found");
-        }
-        else
-        {
-            textArea.setCaretPosition(index);
-            textArea.moveCaretPosition(index + currentFindText.length());
+            currentFindText = input;
+            JTextArea textArea = getCurrentTextArea();
+            int startIndex = textArea.getCaretPosition() - 1;
+            String content = textArea.getText();
+            int index = content.lastIndexOf(currentFindText, startIndex);
+            if (index == -1)
+            {
+                JOptionPane.showMessageDialog(this, "Text not found");
+            }
+            else
+            {
+                textArea.setCaretPosition(index);
+                textArea.moveCaretPosition(index + currentFindText.length());
+            }
         }
     }
 
@@ -525,10 +545,23 @@ public class PaperTrail extends JFrame
     private void replaceText()
     {
         JTextArea textArea = getCurrentTextArea();
-        String findText = JOptionPane.showInputDialog(this, "Find:");
-        String replaceText = JOptionPane.showInputDialog(this, "Replace with:");
-        if (findText != null && replaceText != null)
+        String findText = "";
+        String replaceText = "";
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(2, 2));
+        panel.add(new JLabel("Find:"));
+        JTextField findField = new JTextField();
+        panel.add(findField);
+        panel.add(new JLabel("Replace with:"));
+        JTextField replaceField = new JTextField();
+        panel.add(replaceField);
+
+        int result = JOptionPane.showConfirmDialog(this, panel, "Replace All", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION)
         {
+            findText = findField.getText();
+            replaceText = replaceField.getText();
             textArea.setText(textArea.getText().replace(findText, replaceText));
         }
     }
@@ -617,10 +650,10 @@ public class PaperTrail extends JFrame
     {
         settingsPanel = new JPanel();
         JPanel settingsInnerPanel = new JPanel();
-        settingsInnerPanel.setLayout(new GridLayout(3,1));
-        
+        settingsInnerPanel.setLayout(new BoxLayout(settingsInnerPanel, BoxLayout.Y_AXIS));
         JPanel fontPanel = new JPanel();
         fontPanel.setBorder(new TitledBorder(null, "Font", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+        fontPanel.setBorder(BorderFactory.createCompoundBorder(fontPanel.getBorder(), BorderFactory.createEmptyBorder(10, 10, 10, 10)));
         fontPanel.setLayout(new GridLayout(2,1));
         JPanel fontTopPanel = new JPanel();
         fontTopPanel.setLayout(new GridLayout(3,2));
@@ -653,6 +686,7 @@ public class PaperTrail extends JFrame
 
         JPanel themePanel = new JPanel();
         themePanel.setBorder(new TitledBorder(null, "Theme", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+        themePanel.setBorder(BorderFactory.createCompoundBorder(fontPanel.getBorder(), BorderFactory.createEmptyBorder(10, 10, 10, 10)));
         themePanel.setLayout(new GridLayout(1,2));
         
         ButtonGroup themeGroup = new ButtonGroup();
@@ -676,9 +710,8 @@ public class PaperTrail extends JFrame
         JPanel bottomPanel = new JPanel();
         JButton applyButton = new JButton("Apply");
         JButton closeButton = new JButton("Close");
-        Dimension buttonSize = new Dimension(70, closeButton.getPreferredSize().height);
-        applyButton.setPreferredSize(buttonSize);
-        closeButton.setPreferredSize(buttonSize);
+        applyButton.setPreferredSize(new Dimension(100, closeButton.getPreferredSize().height));
+        closeButton.setPreferredSize(new Dimension(100, closeButton.getPreferredSize().height));
         bottomPanel.add(applyButton);
         bottomPanel.add(closeButton);
 
@@ -704,9 +737,12 @@ public class PaperTrail extends JFrame
             } 
             else 
             {
-                try {
+                try 
+                {
                     setLightTheme();
-                } catch (UnsupportedLookAndFeelException ex) {
+                } 
+                catch (UnsupportedLookAndFeelException ex) 
+                {
                     Logger.getLogger(PaperTrail.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
@@ -717,6 +753,7 @@ public class PaperTrail extends JFrame
         settingsInnerPanel.add(fontPanel);
         settingsInnerPanel.add(themePanel);
         settingsInnerPanel.add(bottomPanel);
+
         settingsPanel.add(settingsInnerPanel);
 
         return settingsPanel;
@@ -759,8 +796,49 @@ public class PaperTrail extends JFrame
     {
         aboutPanel = new JPanel();
 
+        JPanel aboutInnerPanel = new JPanel();
+        aboutInnerPanel.setLayout(new GridLayout(3,1));
+        aboutInnerPanel.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
 
+        String theme = preferences.get("theme", "light");
+        String logoPath = theme.equals("dark") ? "images/logo_dark.png" : "images/logo_light.png";
+        ImageIcon logoIcon = new ImageIcon(getClass().getResource(logoPath));
+        Image logoImage = logoIcon.getImage();
+        int height = 180;
+        int width = (int) (logoImage.getWidth(null) * (height / (double) logoImage.getHeight(null)));
 
+        Image newimg = logoImage.getScaledInstance(width, height, java.awt.Image.SCALE_SMOOTH); 
+        logoIcon = new ImageIcon(newimg);
+        JLabel logoLabel = new JLabel(logoIcon);
+
+        logoLabel.setHorizontalAlignment(JLabel.CENTER);
+
+        JTextArea descriptionArea = new JTextArea("PaperTrail: A powerful, user-friendly text editor designed for simplicity and efficiency. Built with Java, Maven and FlatLaf IJ theme, it offers a clean interface, syntax highlighting, and support for multiple tabs. \n\nPaperTrail is open-source and available on GitHub.");
+        descriptionArea.setSize(500, descriptionArea.getPreferredSize().height);
+        descriptionArea.setFocusable(false);
+        descriptionArea.setEditable(false);
+        descriptionArea.setWrapStyleWord(true);
+        descriptionArea.setLineWrap(true);
+        descriptionArea.setFont(new Font(defaultFontName, Font.PLAIN, defaultTextSize));
+        descriptionArea.setBackground(aboutPanel.getBackground());
+        descriptionArea.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
+        
+        JPanel authorPanel = new JPanel();
+        authorPanel.setLayout(new GridLayout(1,2));
+        JLabel authorLabel = new JLabel("Developer: Rishi Banerjee");
+        authorLabel.setFont(new Font(defaultFontName, Font.PLAIN, defaultTextSize));
+        JLabel githubLinkLabel = new JLabel("<html><a href='https://github.com/QwertyFusion'>https://github.com/QwertyFusion</a></html>");
+        githubLinkLabel.setFont(new Font(defaultFontName, Font.PLAIN, defaultTextSize));
+        authorPanel.add(authorLabel);
+        authorPanel.add(githubLinkLabel);
+        authorPanel.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
+
+        aboutInnerPanel.add(logoLabel);
+        aboutInnerPanel.add(new JScrollPane(descriptionArea));
+        aboutInnerPanel.add(authorPanel);
+
+        aboutPanel.add(aboutInnerPanel);
+    
         return aboutPanel;
     }
 
@@ -816,6 +894,8 @@ public class PaperTrail extends JFrame
 
     private void undoAction()
     {
+        JTextArea currentTextArea = getCurrentTextArea();
+        UndoManager undoManager = undoManagers.get(currentTextArea);
         try
         {
             if (undoManager.canUndo())
@@ -831,6 +911,8 @@ public class PaperTrail extends JFrame
 
     private void redoAction()
     {
+        JTextArea currentTextArea = getCurrentTextArea();
+        UndoManager undoManager = undoManagers.get(currentTextArea);
         try
         {
             if (undoManager.canRedo())

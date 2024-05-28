@@ -68,11 +68,13 @@ public class PaperTrail extends JFrame
     JCheckBoxMenuItem wordWrapItem;
     JLabel statusLabel;
     Preferences preferences;
-    private float zoomFactor = 1.0f;
+    private float zoomFactor;
     private JMenuItem zoomIn, zoomOut, restoreZoom;
     private JCheckBoxMenuItem statusBarToggle;
     private String currentFilePath;
     JPanel settingsPanel;
+    private int defaultTextSize = 16;
+    private String defaultFontName = "Consolas";
 
     PaperTrail() throws UnsupportedLookAndFeelException
     {
@@ -159,6 +161,7 @@ public class PaperTrail extends JFrame
         JMenuItem fontSettings = new JMenuItem("Font");
 
         editMenu.add(undo);
+        editMenu.add(redo);
         editMenu.add(cut);
         editMenu.add(copy);
         editMenu.add(paste);
@@ -690,27 +693,38 @@ public class PaperTrail extends JFrame
 
     private void zoomIn()
     {
-        zoomFactor += 0.1f;
+        zoomFactor = 1;
         updateZoom();
     }
 
     private void zoomOut()
     {
-        zoomFactor -= 0.1f;
+        zoomFactor = -1;
         updateZoom();
     }
 
     private void restoreDefaultZoom()
     {
-        zoomFactor = 1.0f;
-        updateZoom();
+        for (int i = 0; i < tabbedPane.getTabCount(); i++)
+        {
+            JScrollPane scrollPane = (JScrollPane) tabbedPane.getComponentAt(i);
+            JTextArea textArea = (JTextArea) scrollPane.getViewport().getView();
+            Font currentFont = textArea.getFont();
+            float newSize = (float) defaultTextSize;
+            textArea.setFont(currentFont.deriveFont(newSize));
+        }
     }
 
     private void updateZoom()
     {
-        Font font = currentTextArea.getFont();
-        float newSize = font.getSize() * zoomFactor;
-        currentTextArea.setFont(font.deriveFont(newSize));
+        for (int i = 0; i < tabbedPane.getTabCount(); i++)
+        {
+            JScrollPane scrollPane = (JScrollPane) tabbedPane.getComponentAt(i);
+            JTextArea textArea = (JTextArea) scrollPane.getViewport().getView();
+            Font currentFont = textArea.getFont();
+            float newSize = currentFont.getSize() + zoomFactor;
+            textArea.setFont(currentFont.deriveFont(newSize));
+        }
     }
 
     private void toggleStatusBar()
@@ -738,6 +752,7 @@ public class PaperTrail extends JFrame
         }
         catch (CannotUndoException e)
         {
+            JOptionPane.showMessageDialog(this, "Cannot undo: " + e.getMessage());
         }
     }
 
@@ -752,6 +767,7 @@ public class PaperTrail extends JFrame
         }
         catch (CannotRedoException e)
         {
+            JOptionPane.showMessageDialog(this, "Cannot redo: " + e.getMessage());
         }
     }
 
@@ -776,8 +792,8 @@ public class PaperTrail extends JFrame
             setLightTheme();
         }
 
-        String fontName = preferences.get("fontName", "Consolas");
-        int fontSize = preferences.getInt("fontSize", 11);
+        String fontName = preferences.get("fontName", defaultFontName);
+        int fontSize = preferences.getInt("fontSize", defaultTextSize);
         int fontStyle = preferences.getInt("fontStyle", Font.PLAIN);
         Font font = new Font(fontName, fontStyle, fontSize);
         currentTextArea.setFont(font);

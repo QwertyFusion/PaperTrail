@@ -73,6 +73,7 @@ public class PaperTrail extends JFrame
     private JCheckBoxMenuItem statusBarToggle;
     private String currentFilePath;
     JPanel settingsPanel;
+    JPanel aboutPanel;
     private int defaultTextSize = 16;
     private String defaultFontName = "Consolas";
 
@@ -104,7 +105,7 @@ public class PaperTrail extends JFrame
         // Adding first tab by default
         addNewTab();
         updateCurrentTextArea();
-        loadPreferences(); 
+        loadPreferences();
     }
 
     private void closeWindow() 
@@ -140,7 +141,9 @@ public class PaperTrail extends JFrame
         fileMenu.add(openFile);
         fileMenu.add(saveFile);
         fileMenu.add(saveAsFile);
+        fileMenu.addSeparator();
         fileMenu.add(printFile);
+        fileMenu.addSeparator();
         fileMenu.add(closeTab);
         fileMenu.add(closeWindow);
 
@@ -162,16 +165,20 @@ public class PaperTrail extends JFrame
 
         editMenu.add(undo);
         editMenu.add(redo);
+        editMenu.addSeparator();
         editMenu.add(cut);
         editMenu.add(copy);
         editMenu.add(paste);
         editMenu.add(delete);
+        editMenu.addSeparator();
         editMenu.add(find);
         editMenu.add(findNext);
         editMenu.add(findPrevious);
         editMenu.add(replace);
+        editMenu.addSeparator();
         editMenu.add(selectAll);
         editMenu.add(insertDate);
+        editMenu.addSeparator();
         editMenu.add(fontSettings);
 
         // View menu
@@ -186,15 +193,18 @@ public class PaperTrail extends JFrame
         viewMenu.add(zoomIn);
         viewMenu.add(zoomOut);
         viewMenu.add(restoreZoom);
+        editMenu.addSeparator();
         viewMenu.add(statusBarToggle);
         viewMenu.add(wordWrapItem);
 
         // Settings menu
-        JButton settingsMenu = new JButton("Settings");
+        JButton settingsButton = new JButton("Settings");
+        JButton aboutButton = new JButton("About");
         JPanel menuPanel = new JPanel();
         menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.X_AXIS));
         menuPanel.add(Box.createHorizontalGlue());
-        menuPanel.add(settingsMenu);
+        menuPanel.add(settingsButton);
+        menuPanel.add(aboutButton);
         
         menuBar.add(fileMenu);
         menuBar.add(editMenu);
@@ -236,7 +246,8 @@ public class PaperTrail extends JFrame
         restoreZoom.addActionListener(e -> restoreDefaultZoom());
         statusBarToggle.addActionListener(e -> toggleStatusBar());
         wordWrapItem.addActionListener(e -> toggleWordWrap());
-        settingsMenu.addActionListener(e -> openSettingsPage());
+        settingsButton.addActionListener(e -> openSettingsPage());
+        aboutButton.addActionListener(e -> openAboutPage());
 
         newFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK));
         newWindow.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK | KeyEvent.SHIFT_DOWN_MASK));
@@ -277,15 +288,19 @@ public class PaperTrail extends JFrame
         tabbedPane.addTab("Untitled*", scrollPane);
         tabbedPane.setTabComponentAt(tabbedPane.getTabCount() - 1, new TabComponent(tabbedPane));
         tabbedPane.setSelectedComponent(scrollPane);
+        int tabIndex = tabbedPane.getTabCount() - 1;
+        tabbedPane.setSelectedIndex(tabIndex);
 
         TabComponent tabComponent = (TabComponent) tabbedPane.getTabComponentAt(tabbedPane.getTabCount() - 1);
         tabComponent.setPreferredSize(new Dimension(150, 30));
+        tabbedPane.requestFocus();
+        tabbedPane.requestFocusInWindow();
     }
 
     private JTextArea createTextArea()
     {
         JTextArea textArea = new JTextArea();
-        textArea.setFont(new Font("Arial", Font.PLAIN, 11));
+        textArea.setFont(new Font(defaultFontName, Font.PLAIN, defaultTextSize));
         undoManager = new UndoManager();
         textArea.getDocument().addUndoableEditListener(undoManager);
         textArea.getDocument().addDocumentListener(new DocumentListener()
@@ -320,6 +335,7 @@ public class PaperTrail extends JFrame
         textArea.addCaretListener(e -> updateStatusBar());
         textArea.setWrapStyleWord(wordWrapItem.isSelected());
         textArea.setLineWrap(wordWrapItem.isSelected());
+
         return textArea;
     }
 
@@ -574,11 +590,13 @@ public class PaperTrail extends JFrame
             tabbedPane.setTabComponentAt(index, new TabComponent(tabbedPane));
             tabbedPane.setSelectedIndex(index);
             tabbedPane.getTabComponentAt(index).setPreferredSize(new Dimension(150, 30));
+            tabbedPane.requestFocusInWindow();
         } 
         else 
         {
             // If settings page already exists, select that tab
             tabbedPane.setSelectedIndex(settingsTabIndex);
+            tabbedPane.requestFocusInWindow();
         }
     }
     
@@ -690,6 +708,48 @@ public class PaperTrail extends JFrame
 
         return settingsPanel;
     }    
+
+    private int findAboutTabIndex() 
+    {
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) 
+        {
+            if (tabbedPane.getComponentAt(i) == aboutPanel) 
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void openAboutPage()
+    {
+        int aboutTabIndex = findAboutTabIndex();
+        if (aboutTabIndex == -1) 
+        {
+            aboutPanel = createAboutPanel();
+            tabbedPane.addTab("About", aboutPanel);
+            int index = tabbedPane.indexOfComponent(aboutPanel);
+            tabbedPane.setTabComponentAt(index, new TabComponent(tabbedPane));
+            tabbedPane.setSelectedIndex(index);
+            tabbedPane.getTabComponentAt(index).setPreferredSize(new Dimension(150, 30));
+            tabbedPane.requestFocusInWindow();      
+        } 
+        else 
+        {
+            // If about page already exists, select that tab
+            tabbedPane.setSelectedIndex(aboutTabIndex);
+            tabbedPane.requestFocusInWindow();
+        }
+    }
+
+    private JPanel createAboutPanel() 
+    {
+        aboutPanel = new JPanel();
+
+
+
+        return aboutPanel;
+    }
 
     private void zoomIn()
     {

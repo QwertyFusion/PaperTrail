@@ -452,6 +452,50 @@ public class PaperTrail extends JFrame
         }
     }
 
+    public void openFile(File file) 
+    {
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            JTextArea textArea = createTextArea();
+            textArea.read(br, null);
+    
+            JScrollPane scrollPane = new JScrollPane(textArea);
+            tabbedPane.addTab(file.getName(), scrollPane);
+            tabbedPane.setTabComponentAt(tabbedPane.getTabCount() - 1, new TabComponent(tabbedPane));
+            tabbedPane.setSelectedComponent(scrollPane);
+    
+            TabComponent tabComponent = (TabComponent) tabbedPane.getTabComponentAt(tabbedPane.getTabCount() - 1);
+            tabComponent.setPreferredSize(new Dimension(150, 30));
+    
+            currentFilePath = file.getAbsolutePath();
+    
+            textArea.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    markAsModified();
+                }
+    
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    markAsModified();
+                }
+    
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    markAsModified();
+                }
+    
+                private void markAsModified() {
+                    String title = tabbedPane.getTitleAt(tabbedPane.getSelectedIndex());
+                    if (!title.endsWith("*")) {
+                        tabbedPane.setTitleAt(tabbedPane.getSelectedIndex(), title + "*");
+                    }
+                }
+            });
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error opening file: " + e.getMessage());
+        }
+    }
+
     private void saveFile(boolean saveAs) 
     {
         if (!tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()).equals("Settings") &&

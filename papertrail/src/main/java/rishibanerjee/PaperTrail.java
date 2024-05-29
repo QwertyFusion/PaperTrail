@@ -38,6 +38,7 @@ import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoManager;
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
@@ -86,7 +87,8 @@ public class PaperTrail extends JFrame
     {
         openWindowsCount++;
         setTitle("PaperTrail");
-        setSize(800,600);
+        setSize(1000,600);
+        setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(new java.awt.event.WindowAdapter() 
         {
@@ -113,17 +115,28 @@ public class PaperTrail extends JFrame
         loadPreferences();        
     }
 
-    private void closeWindow() 
+    private void closeWindow()
     {
-        openWindowsCount--; 
-        if (openWindowsCount <= 0) 
-        { 
-            dispose();
-            System.exit(0);
-        } 
-        else 
+        if (tabbedPane.getTabCount()>0)
         {
-            dispose();
+            for (int i = 0; i < tabbedPane.getTabCount(); i++)
+            {
+                closeCurrentTab(i);
+            }
+        }
+
+        if(tabbedPane.getTabCount()==0)
+        {
+            openWindowsCount--;
+            if (openWindowsCount <= 0)
+            {
+                dispose();
+                System.exit(0);
+            }
+            else
+            {
+                dispose();
+            }
         }
     }
 
@@ -140,7 +153,7 @@ public class PaperTrail extends JFrame
         JMenuItem saveAsFile = new JMenuItem("Save As");
         JMenuItem printFile = new JMenuItem("Print");
         JMenuItem closeTab = new JMenuItem("Close Tab");
-        JMenuItem closeWindow = new JMenuItem("Close Window");
+        JMenuItem closeWindowButton = new JMenuItem("Close Window");
         fileMenu.add(newFile);
         fileMenu.add(newWindow);
         fileMenu.add(openFile);
@@ -150,7 +163,7 @@ public class PaperTrail extends JFrame
         fileMenu.add(printFile);
         fileMenu.addSeparator();
         fileMenu.add(closeTab);
-        fileMenu.add(closeWindow);
+        fileMenu.add(closeWindowButton);
         
 
         // Edit menu
@@ -236,7 +249,7 @@ public class PaperTrail extends JFrame
         saveAsFile.addActionListener(e -> saveFile(true));
         printFile.addActionListener(e -> printFile());
         closeTab.addActionListener(e -> closeCurrentTab());
-        closeWindow.addActionListener(e -> dispose());
+        closeWindowButton.addActionListener(e -> closeWindow());
         cut.addActionListener(e -> getCurrentTextArea().cut());
         copy.addActionListener(e -> getCurrentTextArea().copy());
         paste.addActionListener(e -> getCurrentTextArea().paste());
@@ -265,7 +278,7 @@ public class PaperTrail extends JFrame
         saveAsFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK | KeyEvent.SHIFT_DOWN_MASK));
         printFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, KeyEvent.CTRL_DOWN_MASK));
         closeTab.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, KeyEvent.CTRL_DOWN_MASK));
-        closeWindow.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, KeyEvent.CTRL_DOWN_MASK | KeyEvent.SHIFT_DOWN_MASK));
+        closeWindowButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, KeyEvent.CTRL_DOWN_MASK | KeyEvent.SHIFT_DOWN_MASK));
         cut.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.CTRL_DOWN_MASK));
         copy.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.CTRL_DOWN_MASK));
         paste.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, KeyEvent.CTRL_DOWN_MASK));
@@ -367,10 +380,18 @@ public class PaperTrail extends JFrame
         statusLabel.setText("Line: " + (lineNum + 1) + ", Column: " + (colNum + 1));
     }
 
-    private JTextArea getCurrentTextArea()
+    private JTextArea getCurrentTextArea() 
     {
-        JScrollPane scrollPane = (JScrollPane) tabbedPane.getSelectedComponent();
-        return (JTextArea) scrollPane.getViewport().getView();
+        Component component = tabbedPane.getSelectedComponent();
+        if (component instanceof JScrollPane) 
+        {
+            JScrollPane scrollPane = (JScrollPane) component;
+            Component view = scrollPane.getViewport().getView();
+            if (view instanceof JTextArea) {
+                return (JTextArea) view;
+            }
+        }
+        return null;
     }
 
     private void openFile()
@@ -748,6 +769,8 @@ public class PaperTrail extends JFrame
             }
         });
 
+        closeButton.addActionListener(e -> closeCurrentTab());
+
         fontPanel.add(fontTopPanel);
         fontPanel.add(fontDownPanel);
         settingsInnerPanel.add(fontPanel);
@@ -883,12 +906,90 @@ public class PaperTrail extends JFrame
         statusLabel.setVisible(statusBarToggle.isSelected());
     }
 
-    private void closeCurrentTab()
+    private void closeCurrentTab() 
     {
         int selectedIndex = tabbedPane.getSelectedIndex();
-        if (selectedIndex != -1)
+        if (selectedIndex!= -1) 
         {
-            tabbedPane.remove(selectedIndex);
+            JTextArea currentTextArea = getCurrentTextArea();
+            if (currentTextArea!= null) 
+            {
+                String title = currentTextArea.getText();
+                if (tabbedPane.getTitleAt(selectedIndex).endsWith("*") &&!title.isEmpty() &&!tabbedPane.getTitleAt(selectedIndex).equals("Settings") &&!tabbedPane.getTitleAt(selectedIndex).equals("About")) 
+                {
+                    int result = JOptionPane.showOptionDialog(
+                            SwingUtilities.getWindowAncestor(currentTextArea), // Show the dialog relative to the text area's window ancestor
+                            "The tab \""+tabbedPane.getTitleAt(selectedIndex)+"\" has unsaved changes. What would you like to do?",
+                            "Unsaved Changes",
+                            JOptionPane.YES_NO_CANCEL_OPTION,
+                            JOptionPane.QUESTION_MESSAGE,
+                            null,
+                            new Object[]{"Save", "Don't Save", "Cancel"},
+                            "Save"
+                    );
+    
+                    if (result == JOptionPane.YES_OPTION) 
+                    {
+                        saveFile(false);
+                        tabbedPane.remove(selectedIndex);
+                    } 
+                    else if (result == JOptionPane.NO_OPTION) 
+                    {
+                        tabbedPane.remove(selectedIndex);
+                    }
+                } 
+                else 
+                {
+                    tabbedPane.remove(selectedIndex);
+                }
+            } 
+            else 
+            {
+                tabbedPane.remove(selectedIndex);
+            }
+        }
+    }
+
+    private void closeCurrentTab(int index) 
+    {
+        if (index!= -1) 
+        {
+            JTextArea currentTextArea = getCurrentTextArea();
+            if (currentTextArea!= null) 
+            {
+                String title = currentTextArea.getText();
+                if (tabbedPane.getTitleAt(index).endsWith("*") &&!title.isEmpty() &&!tabbedPane.getTitleAt(index).equals("Settings") &&!tabbedPane.getTitleAt(index).equals("About")) 
+                {
+                    int result = JOptionPane.showOptionDialog(
+                            SwingUtilities.getWindowAncestor(currentTextArea), // Show the dialog relative to the text area's window ancestor
+                            "The tab \""+tabbedPane.getTitleAt(index)+"\" has unsaved changes. What would you like to do?",
+                            "Unsaved Changes",
+                            JOptionPane.YES_NO_CANCEL_OPTION,
+                            JOptionPane.QUESTION_MESSAGE,
+                            null,
+                            new Object[]{"Save", "Don't Save", "Cancel"},
+                            "Save"
+                    );
+    
+                    if (result == JOptionPane.YES_OPTION) 
+                    {
+                        saveFile(false);
+                        tabbedPane.remove(index);
+                    } 
+                    else if (result == JOptionPane.NO_OPTION) 
+                    {
+                        tabbedPane.remove(index);
+                    }
+                } 
+                else 
+                {
+                    tabbedPane.remove(index);
+                }
+            } 
+            else 
+            {
+                tabbedPane.remove(index);
+            }
         }
     }
 
@@ -965,24 +1066,23 @@ public class PaperTrail extends JFrame
             this.pane = pane;
             setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
             setOpaque(false);
-    
+        
             label = new JLabel() 
             {
                 @Override
                 public String getText() 
                 {
                     int i = pane.indexOfTabComponent(TabComponent.this);
-                    if (i != -1) 
-                    {
+                    if (i != -1) {
                         return pane.getTitleAt(i);
                     }
                     return null;
                 }
             };
-    
+        
             label.setPreferredSize(new Dimension(110, label.getPreferredSize().height));
             add(label);
-    
+        
             add(Box.createHorizontalGlue());
             closeButton = new JButton("x");
             closeButton.setOpaque(false);
@@ -992,12 +1092,41 @@ public class PaperTrail extends JFrame
             add(closeButton, BorderLayout.EAST);
         }
     
-        private void closeTab() 
+        public void closeTab() 
         {
             int i = pane.indexOfTabComponent(TabComponent.this);
-            if (i != -1) 
-            {
-                pane.remove(i);
+            if (i!= -1) {
+                JTextArea textArea = getCurrentTextArea();
+                if (textArea!= null) 
+                {
+                    String title = textArea.getText();
+                    if (pane.getTitleAt(i).endsWith("*") &&!title.isEmpty() &&!pane.getTitleAt(i).equals("Settings") &&!pane.getTitleAt(i).equals("About")) {
+                        int result = JOptionPane.showOptionDialog(
+                                SwingUtilities.getWindowAncestor(textArea), // Show the dialog relative to the text area's window ancestor
+                                "The tab \""+tabbedPane.getTitleAt(i)+"\" has unsaved changes. What would you like to do?",
+                                "Unsaved Changes",
+                                JOptionPane.YES_NO_CANCEL_OPTION,
+                                JOptionPane.QUESTION_MESSAGE,
+                                null,
+                                new Object[]{"Save", "Don't Save", "Cancel"},
+                                "Save"
+                        );
+        
+                        if (result == JOptionPane.YES_OPTION)
+                        {
+                            saveFile(false);
+                            pane.remove(i);
+                        } 
+                        else if (result == JOptionPane.NO_OPTION) 
+                        {
+                            pane.remove(i);
+                        }
+                    } else {
+                        pane.remove(i);
+                    }
+                } else {
+                    pane.remove(i);
+                }
             }
         }
     }

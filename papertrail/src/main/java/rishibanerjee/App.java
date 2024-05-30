@@ -11,9 +11,11 @@ public class App
         if (args.length > 0) 
         {
             File file = new File(args[0]);
-            if (file.exists() && file.isFile()) {
+            if (file.exists() && file.isFile()) 
+            {
                 PaperTrail app = new PaperTrail();
                 app.setVisible(true);
+                app.closeCurrentTab(0);
                 app.openFile(file);
             } 
             else 

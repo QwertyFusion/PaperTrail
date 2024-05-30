@@ -994,7 +994,7 @@ public class PaperTrail extends JFrame
         }
     }
 
-    private void closeCurrentTab(int index) 
+    protected void closeCurrentTab(int index) 
     {
         if (index!= -1) 
         {

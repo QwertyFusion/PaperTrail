@@ -1,7 +1,7 @@
 <body>
     <h1>PaperTrail - Text Editor</h1>
 <p align="center">
-  <img src="https://github.com/QwertyFusion/PaperTrail/blob/main/papertrail/src/main/java/rishibanerjee/images/logo_dark.png" alt="PaperTrail - Text Editor" height="300"/>
+  <img src="https://github.com/QwertyFusion/PaperTrail/blob/main/papertrail/src/main/java/rishibanerjee/images/logo_dark.png" alt="PaperTrail - Text Editor"/>
 </p>
   <p align="center">Stay on track with PaperTrail – where every edit leaves a clear path forward!</p>
     <p>PaperTrail is an advanced yet user-friendly text editor designed to streamline your editing experience. Built with Java, Maven, and the FlatLaf IJ theme, it offers a modern and intuitive interface with a comprehensive set of features to boost productivity.</p>

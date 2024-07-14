@@ -45,11 +45,11 @@
   </ol>
 <h2>Link to Tools</h2>
 <p align="left">
-<a href="https://code.visualstudio.com" target="_blank" rel="noreferrer"> <img src="https://www.vectorlogo.zone/logos/visualstudio_code/visualstudio_code-icon.svg" alt="Visual Studio Code" width="40" height="40"/> </a>
-<a href="https://netbeans.apache.org/front/main/index.html" target="_blank" rel="noreferrer"> <img src="https://upload.wikimedia.org/wikipedia/commons/9/98/Apache_NetBeans_Logo.svg" alt="Apache NetBeans IDE 14" width="40" height="40"/> </a>
-<a href="https://www.java.com/en/" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/java/java-original.svg" alt="Java" width="40" height="40"/> </a>
-<a href="https://launch4j.sourceforge.net" target="_blank" rel="noreferrer"> <img src="https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/i/bcdaed53-543b-458d-a637-792c7e4f012e/dc4trju-42188b8e-2c48-4ac8-8c01-e8b61c966455.png/v1/fill/w_256,h_256,q_80,strp/launch4j_ico_by_maginom_dc4trju-fullview.jpg" alt="Launch4j" width="40" height="40"/> </a>
-<a href="https://jrsoftware.org/isinfo.php" target="_blank" rel="noreferrer"> <img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Inno_Setup_icon.png" alt="Inno Setup Compiler" width="40" height="40"/> </a></p>
+<a href="https://code.visualstudio.com" target="_blank" rel="noreferrer"> <img src="https://www.vectorlogo.zone/logos/visualstudio_code/visualstudio_code-icon.svg" alt="Visual Studio Code" width="40" height="40"/></a>&emsp;
+<a href="https://netbeans.apache.org/front/main/index.html" target="_blank" rel="noreferrer"> <img src="https://upload.wikimedia.org/wikipedia/commons/9/98/Apache_NetBeans_Logo.svg" alt="Apache NetBeans IDE 14" width="40" height="40"/></a>&emsp;
+<a href="https://www.java.com/en/" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/java/java-original.svg" alt="Java" width="40" height="40"/></a>&emsp;
+<a href="https://launch4j.sourceforge.net" target="_blank" rel="noreferrer"> <img src="https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/i/bcdaed53-543b-458d-a637-792c7e4f012e/dc4trju-42188b8e-2c48-4ac8-8c01-e8b61c966455.png/v1/fill/w_256,h_256,q_80,strp/launch4j_ico_by_maginom_dc4trju-fullview.jpg" alt="Launch4j" width="40" height="40"/></a>&emsp;
+<a href="https://jrsoftware.org/isinfo.php" target="_blank" rel="noreferrer"> <img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Inno_Setup_icon.png" alt="Inno Setup Compiler" width="40" height="40"/></a>&emsp;</p>
 <h2>Developer</h2>
 <ul>
   <li><a href="https://github.com/QwertyFusion">[@QwertyFusion]</a></li>
